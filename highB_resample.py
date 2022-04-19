@@ -39,9 +39,9 @@ class resample_highb():
         #self.csv_file = r'T:\MIP\Katie_Merriman\Project2Data\Patient_list_directories.csv'
         #self.save_folder = r'T:\MIP\Katie_Merriman\surgery_cases_samplesTEMP\ConvertedVOIs'
 
-        self.csv_file = r"T:\MIP\Katie_Merriman\Project2Data\Patient_list_directories_short.csv"
-        #self.sourceFolder = r"T:\MRIClinical\surgery_cases"
-        self.patientFolder = r"T:\MIP\Katie_Merriman\Project1Data\PatientNifti_data"
+
+        self.csv_file = r'T:\MIP\Katie_Merriman\Project2Data\Patient_list_directories_short.csv'
+        self.patientFolder = r'T:\MIP\Katie_Merriman\Project1Data\PatientNifti_data'
 
 
     def resampleAll(self):
@@ -51,7 +51,8 @@ class resample_highb():
         for rows, file_i in df_csv.iterrows():
             p = (str(file_i['topSourceFolder']))
             p2 = os.path.join(self.patientFolder, os.path.basename(p), "NIfTI")
-            patient.append([p,p2,"."])
+            p3 = (str(file_i['b0SourceFolder']))
+            patient.append([p,p2,p3])
 
         for i in range(0,len(patient)):
             patient[i][2] = self.readDicoms(patient[i])
@@ -88,6 +89,8 @@ class resample_highb():
                         elif (any([substring in dicomString for substring in ADClist])) or (
                         any([substring in dicomSeries for substring in ADClist])):
                             dicomSeriesType = 'ADC'
+                        elif ('extracted' in filePath):
+                            dicomSeriesType = 'highB_extracted'
                         else:
                             series_descript = ds.SeriesDescription
                             if any([substring in series_descript for substring in ADClist]) or (
@@ -102,6 +105,30 @@ class resample_highb():
                                 dicomSeriesType = 'highB'
                         dicomSeriesList.append(dicomSeries)
                         dicomProtocolList.append(dicomSeriesType)
+
+        for root, dirs, files in os.walk(p[2]):
+            for name in files:
+                filePath = os.path.join(root, name)
+                try:
+                    ds = dcmread(filePath)
+                except IOError:
+                    # print(f'No such file')
+                    continue
+                except InvalidDicomError:
+                    # print(f'Invalid Dicom file')
+                    continue
+                if name != ("DICOMDIR" or "LOCKFILE" or "VERSION"):
+                    dicomString = filePath[:-(len(name) + 1)]
+                    if dicomString not in dicomFoldersList:
+                        if 'delete' in dicomString:
+                             break
+                        dicomFoldersList.append(dicomString)
+                        dicomSeries = ds.ProtocolName.replace('/', '-')
+                        dicomSeries = dicomSeries.replace(" ", "_")
+                        dicomSeriesType = 'b0_extracted'
+                        dicomSeriesList.append(dicomSeries)
+                        dicomProtocolList.append(dicomSeriesType)
+
 
         if dicomFoldersList:
             print("Resampling HighB")
@@ -122,9 +149,9 @@ class resample_highb():
             # convert to NIfTI
             reader.SetFileNames(dicom_names)
             # print(f'Converting files...')
-            if dicomProtocol == 'highB':
+            if dicomProtocol == 'b0_extracted':
                 highB_img = reader.Execute()
-                niihighB = os.path.join(p[1], "highB_Resampled.nii.gz")
+                niihighB = os.path.join(p[1], "b0_Resampled.nii.gz")
                 # print(f'Converting ADC image')
             else:
                 if dicomProtocol == 'T2':
