@@ -1,4 +1,4 @@
-# Dicom_searchConvert
+# highB_resample
 #   Created 4/18/22 by Katie Merriman
 #   Searches through designated folder for DICOM files of all patients on csv list
 #   Converts DICOMs to Nifti, determines DICOM type, and saves to designated folder
@@ -40,8 +40,8 @@ class resample_highb():
         #self.save_folder = r'T:\MIP\Katie_Merriman\surgery_cases_samplesTEMP\ConvertedVOIs'
 
 
-        self.csv_file = r'T:\MIP\Katie_Merriman\Project2Data\Patient_list_directories_short.csv'
-        self.patientFolder = r'T:\MIP\Katie_Merriman\Project1Data\PatientNifti_data'
+        self.csv_file = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/Patient_list_directories_short2.csv'
+        self.patientFolder = 'Mdrive_mount/MIP/Katie_Merriman/Project1Data/PatientNifti_data'
 
 
     def resampleAll(self):
