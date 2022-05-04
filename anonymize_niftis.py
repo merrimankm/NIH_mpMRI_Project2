@@ -36,9 +36,15 @@ import csv
 
 class anonymizer():
     def __init__(self):
-        self.csv_file = r'T:\MIP\Katie_Merriman\Project2Data\Patient_list2.csv'
-        self.patientFolder = r'T:\MIP\Katie_Merriman\Project1Data\PatientNifti_data'
-        self.saveFolder = r'T:\MIP\Katie_Merriman\Project2Data\Anonymized_NIfTIs'
+        #self.csv_file = r'T:\MIP\Katie_Merriman\Project2Data\Patient_list2.csv'
+        #self.patientFolder = r'T:\MIP\Katie_Merriman\Project1Data\PatientNifti_data'
+        #self.saveFolder = r'T:\MIP\Katie_Merriman\Project2Data\Anonymized_NIfTIs'
+
+       ### lambda desktop directory mapping
+        self.csv_file = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/Patient_list.csv'
+        self.patientFolder = 'Mdrive_mount/MIP/Katie_Merriman/Project1Data/PatientNifti_data'
+        self.saveFolder = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/Anonymized_NIfTIs'
+
 
     def anonymize(self):
         anonymized = []
@@ -53,7 +59,7 @@ class anonymizer():
             patient.append([p,p2])
 
         for i in range(0,len(patient)):
-            print('Anonymizing', patient[1][0])
+            print('Anonymizing', patient[i][0])
             anonName = str(i+1)
             if len(anonName)<2:
                 anonName = '0'+anonName
