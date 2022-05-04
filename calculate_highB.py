@@ -38,12 +38,12 @@ class calculate_highb():
     def __init__(self):
 
         ### personal directory mapping
-        self.csv_file = r'T:\MIP\Katie_Merriman\Project2Data\Patient_list_directories_short.csv'
+        self.csv_file = r'T:\MIP\Katie_Merriman\Project2Data\Patient_list_directories_short2.csv'
         self.patient_folder = r'T:\MIP\Katie_Merriman\Project1Data\PatientNifti_data'
 
         ### lambda desktop directory mapping
         #self.csv_file = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/Patient_list_directories_short2.csv'
-        #self.patientFolder = 'Mdrive_mount/MIP/Katie_Merriman/Project1Data/PatientNifti_data'
+        #self.patient_folder = 'Mdrive_mount/MIP/Katie_Merriman/Project1Data/PatientNifti_data'
 
         ### choose high b value
         self.highBvalue = 1500
@@ -74,13 +74,12 @@ class calculate_highb():
         print("reading high b for", patient[0])
         b0_img = sitk.ReadImage(patientB)
         b0 = sitk.GetArrayFromImage(b0_img)
-        print("reading ADC")
+        b0 = b0.astype(float)
         ADC_img = sitk.ReadImage(patientADC)
         ADC = sitk.GetArrayFromImage(ADC_img)
-        #ADC = sitk.Cast(ADC_img, sitk.sitkFloat32)
-        print("calculating high b")
+        ADC = ADC.astype(float)
+        ADC = ADC*1e-6
         highB = np.multiply(b0, np.exp(-1 * self.highBvalue * ADC))
-
         highBimg = sitk.GetImageFromArray(highB)
 
 
@@ -89,7 +88,7 @@ class calculate_highb():
         for meta_elem in b0_img.GetMetaDataKeys():
             highBimg.SetMetaData(meta_elem, b0_img.GetMetaData(meta_elem))
 
-        sitk.WriteImage(highBimg,os.path.join(patient[1],'highB_calculated_resampled.nii.gz'))
+        sitk.WriteImage(highBimg,os.path.join(patient[1],'highB_resampled_calculated.nii.gz'))
 
 
 if __name__ == '__main__':
