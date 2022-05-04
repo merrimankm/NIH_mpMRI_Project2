@@ -1,4 +1,4 @@
-B0_resample
+# B0_resample
 #   Created 5/4/22 by Katie Merriman
 #   Searches through designated folder for DICOM files of all patients on csv list
 #   Converts DICOMs to Nifti, determines DICOM type, and saves to designated folder
@@ -35,7 +35,7 @@ import SimpleITK as sitk
 import pandas as pd
 
 
-class resample_highb():
+class resample_b0():
     def __init__(self):
         self.csv_file = r'T:\MIP\Katie_Merriman\Project2Data\Patient_list_directories_short.csv'
         self.patientFolder = r'T:\MIP\Katie_Merriman\Project1Data\PatientNifti_data'
@@ -182,6 +182,6 @@ class resample_highb():
 
 
 if __name__ == '__main__':
-    c = resample_highb()
+    c = resample_b0()
     c.resampleAll()
 
