@@ -10,13 +10,13 @@
 
 # Inputs
 #   1: csv file, including path.
-#           Must include column of MRNs labeled as "MRN" and
-#               column with filepath to patient folder containing DICOMS labeled "topSourceFolder".
-#           MRNs can be alone or in MRN_DateOfMRI format
-#   2: path to folder containing patient folders with DICOM files
-#   3: path to folder where converted files and csv reports should be saved
+#           Must include
+#               a. column of MRNs labeled as "MRN"  (MRNs can be JUST the MRN or in MRN_DateOfMRI format)
+#               b. column with filepath to patient folder containing T2 DICOMS labeled "topSourceFolder"
+#               c. column with filepath to folder containing highB DICOMS labeled "bSourceFolder"
+#   2: path to folder where converted files and csv reports should be saved
 #   example usage:
-#   python Dicom_searchConvert.py "/path/to/cvsFileName.csv" "/path/to/folder/of/patient/folders" "/path/to/save/folder"
+#   python highB_resample.py "/path/to/cvsFileName.csv" "/path/to/save/folder"
 
 # Outputs
 #   Nifti files saved as T2, ADC, or highB in folders created for each patient within designated save folder
@@ -35,13 +35,12 @@ import pandas as pd
 
 class resample_highb():
     def __init__(self):
-        #self.dicom_folder = r'T:\MIP\Katie_Merriman\surgery_cases_samplesTEMP\VOI_test'
-        #self.csv_file = r'T:\MIP\Katie_Merriman\Project2Data\Patient_list_directories.csv'
-        #self.save_folder = r'T:\MIP\Katie_Merriman\surgery_cases_samplesTEMP\ConvertedVOIs'
+        self.csv_file = r'T:\MIP\Katie_Merriman\Project2Data\Patient_list_directories_short.csv'
+        self.patientFolder = r'T:\MIP\Katie_Merriman\Project1Data\PatientNifti_data'
 
 
-        self.csv_file = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/Patient_list_directories_short2.csv'
-        self.patientFolder = 'Mdrive_mount/MIP/Katie_Merriman/Project1Data/PatientNifti_data'
+        # self.csv_file = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/Patient_list_directories_short2.csv'
+        # self.patientFolder = 'Mdrive_mount/MIP/Katie_Merriman/Project1Data/PatientNifti_data'
 
 
     def resampleAll(self):
@@ -51,7 +50,7 @@ class resample_highb():
         for rows, file_i in df_csv.iterrows():
             p = (str(file_i['topSourceFolder']))
             p2 = os.path.join(self.patientFolder, os.path.basename(p), "NIfTI")
-            p3 = (str(file_i['b0SourceFolder']))
+            p3 = (str(file_i['bSourceFolder']))
             patient.append([p,p2,p3])
 
         for i in range(0,len(patient)):
@@ -125,7 +124,7 @@ class resample_highb():
                         dicomFoldersList.append(dicomString)
                         dicomSeries = ds.ProtocolName.replace('/', '-')
                         dicomSeries = dicomSeries.replace(" ", "_")
-                        dicomSeriesType = 'b0_extracted'
+                        dicomSeriesType = 'highB_extracted'
                         dicomSeriesList.append(dicomSeries)
                         dicomProtocolList.append(dicomSeriesType)
 
@@ -149,9 +148,9 @@ class resample_highb():
             # convert to NIfTI
             reader.SetFileNames(dicom_names)
             # print(f'Converting files...')
-            if dicomProtocol == 'b0_extracted':
+            if dicomProtocol == 'highB_extracted':
                 highB_img = reader.Execute()
-                niihighB = os.path.join(p[1], "b0_Resampled.nii.gz")
+                niihighB = os.path.join(p[1], "highB_resampled.nii.gz")
                 # print(f'Converting ADC image')
             else:
                 if dicomProtocol == 'T2':
