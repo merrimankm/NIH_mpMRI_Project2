@@ -73,6 +73,7 @@ class anonymizer():
             ADC = os.path.join(patient[i][1], 'ADC.nii')
             B_ext = os.path.join(patient[i][1], 'highB_resampled.nii')
             B_calc = os.path.join(patient[i][1], 'highB_resampled_calculated.nii')
+            B_calc_old = os.path.join(patient[i][1], 'highB_calculated_resampled.nii')
 
             try:
                 T2_img = sitk.ReadImage(T2)
@@ -86,15 +87,19 @@ class anonymizer():
                         anonymized.append([patient[i][0], anonFolder])
                     except RuntimeError:
                         try:
-                            highB_img = sitk.ReadImage(B_ext)
-                            sitk.WriteImage(highB_img, os.path.join(anonFolder, 'highB.nii.gz'))
-                            anonymized.append([patient[i][0], anonFolder])
+                            highB_img = sitk.ReadImage(B_calc_old)
+                            errors.append([patient[i][0], 'highB not calculated correctly'])
                         except RuntimeError:
-                            errors.append(patient[i][0])
+                            try:
+                                highB_img = sitk.ReadImage(B_ext)
+                                sitk.WriteImage(highB_img, os.path.join(anonFolder, 'highB.nii.gz'))
+                                anonymized.append([patient[i][0], anonFolder])
+                            except RuntimeError:
+                                errors.append([patient[i][0], 'highB not found'])
                 except RuntimeError:
-                    errors.append(patient[i][0])
+                    errors.append([patient[i][0],'ADC not found'])
             except RuntimeError:
-                errors.append(patient[i][0])
+                errors.append([patient[i][0], 'T2 not found'])
 
 
         #### write .csv files ####
