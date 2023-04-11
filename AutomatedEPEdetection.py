@@ -10,7 +10,7 @@ class EPEdetector:
 
         local = 1
         self.threshold = 0.35
-        self.variance = 6
+        self.variance = 6 #maximum 3D distance observed as variance: 6.15379664144412
 
         if local:
             self.mask_folder = r'T:\MIP\Katie_Merriman\Project2Data\NVIDIA_output\Anonymized_NIfTIs_WP' \
@@ -39,7 +39,7 @@ class EPEdetector:
 
         EPEdata = []
 
-        for p in range(1, 51):
+        for p in range(51, 101):
 
             # patient name should follow format 'SURG-00X'
             patient = 'SURG-'+str(p+1000)[1:]
@@ -78,7 +78,7 @@ class EPEdetector:
             # writing the data into the file
             with file:
                 write = csv.writer(file)
-                write.writerows(EPEpatientData)
+                write.writerows([EPEpatientData])
             file.close()
 
         return
@@ -193,7 +193,7 @@ class EPEdetector:
                         insideProst.append([lesionNZ[0][ind], lesionNZ[1][ind], lesionNZ[2][ind]])
 
                 # if lesion outside of prostate variance:
-                if len(outsideVar) >50:
+                if len(outsideVar) >100:
                     distfromCapsule = 'outside variance'
                     EPEscore = 3
                     outsideArea = len(outsideVar)
@@ -222,7 +222,7 @@ class EPEdetector:
                             distfromCapsule = min_dist
                     # if distance outside capsule at least 1/4 of variance OR if area > 200, EPEscore = 1
                     # if both conditions are true, EPE score = 2
-                    if distfromCapsule > (self.variance/4):
+                    if distfromCapsule > (self.variance/2):
                         if outsideArea > 200:
                             EPEscore = 2
                         else:
