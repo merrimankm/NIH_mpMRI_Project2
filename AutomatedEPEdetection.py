@@ -18,15 +18,16 @@ class EPEdetector:
             self.dicom_folder = r'T:\MIP\Katie_Merriman\Project2Data\Anonymized_NIfTIs'
             self.csv_file = r'T:\MIP\Katie_Merriman\Project2Data\dilation_list.csv'
             self.save_folder = r'T:\MIP\Katie_Merriman\Project2Data\DilatedProstate_data'
-            self.fileName = r'T:\MIP\Katie_Merriman\Project2Data\EPEresults.csv'
+            self.fileName1 = r'T:\MIP\Katie_Merriman\Project2Data\EPEresultsbylesion.csv'
+            self.fileName2 = r'T:\MIP\Katie_Merriman\Project2Data\EPEresultsbypatient.csv'
         else:
             self.mask_folder = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/NVIDIA_output/Anonymized_NIfTIs_WP' \
                                '/Anonymized_NIfTIs_WP '
             self.dicom_folder = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/Anonymized_NIfTIs'
             self.csv_file = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/dilation_list.csv'
             self.save_folder = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/DilatedProstate_data'
-            self.fileName = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/EPEresults.csv'
-
+            self.fileName1 = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/EPEresultsbylesion.csv'
+            self.fileName2 = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/EPEresultsbypatient.csv'
 
     def determineEPE(self):
         #file = open(self.fileName, 'a+', newline='')
@@ -38,10 +39,11 @@ class EPEdetector:
 
         EPEdata = []
 
-        for p in range(11, 21):
+        for p in range(1, 51):
 
             # patient name should follow format 'SURG-00X'
             patient = 'SURG-'+str(p+1000)[1:]
+            print(patient)
 
             prost = sitk.ReadImage(os.path.join(
                 r'T:\MIP\Katie_Merriman\Project2Data\NVIDIA_output\Anonymized_NIfTIs_WP\Anonymized_NIfTIs_WP',
@@ -61,11 +63,18 @@ class EPEdetector:
                 r'T:\MIP\Katie_Merriman\Project2Data\DilatedProstate_data2', patient, r'output\lesion_mask.nii'))
             lesionArr = sitk.GetArrayFromImage(lesionMask)
 
-            EPEpatientData = self.EPEbyLesion(patient, lesionHeatMap, prostArr, prostEdge, varArr, probArr, lesionArr)
+            [EPElesionData, EPEpatientData] = self.EPEbyLesion(patient, lesionHeatMap, prostArr, prostEdge, varArr, probArr, lesionArr)
 
-            EPEdata.append(EPEpatientData)
+            EPEdata.append(EPElesionData)
 
-            file = open(self.fileName, 'a+', newline='')
+            file = open(self.fileName1, 'a+', newline='')
+            # writing the data into the file
+            with file:
+                write = csv.writer(file)
+                write.writerows(EPElesionData)
+            file.close()
+
+            file = open(self.fileName2, 'a+', newline='')
             # writing the data into the file
             with file:
                 write = csv.writer(file)
@@ -140,6 +149,7 @@ class EPEdetector:
         labeledmask.CopyInformation(lesionMask)
         sitk.WriteImage(labeledmask, labeledname)
 
+        lesionEPEdata = []
         patientEPEdata = []
         edgeNZ = edgeArr.nonzero()
         spacing = lesionMask.GetSpacing()
@@ -160,7 +170,6 @@ class EPEdetector:
             excludeLesion = 1
             for ind in range(len(lesionNZ[0])):
                 if lesionArr[lesionNZ[0][ind], lesionNZ[1][ind], lesionNZ[2][ind]] == 1:
-                    print(lesionNZ[0][ind], lesionNZ[1][ind], lesionNZ[2][ind])
                     excludeLesion = 0
                     break
 
@@ -184,16 +193,22 @@ class EPEdetector:
                         insideProst.append([lesionNZ[0][ind], lesionNZ[1][ind], lesionNZ[2][ind]])
 
                 # if lesion outside of prostate variance:
-                if len(outsideVar) != 0:
+                if len(outsideVar) >50:
                     distfromCapsule = 'outside variance'
                     EPEscore = 3
                     outsideArea = len(outsideVar)
-                    patientEPEdata.append([patient, 'lesion' + str(i+1), EPEscore, distfromCapsule, outsideArea])
+                    lesionEPEdata.append([patient, 'lesion' + str(i + 1), EPEscore, distfromCapsule, outsideArea])
+                elif len(outsideVar) != 0:
+                    distfromCapsule = 'outside variance'
+                    EPEscore = 2
+                    outsideArea = len(outsideVar)
+                    lesionEPEdata.append([patient, 'lesion' + str(i+1), EPEscore, distfromCapsule, outsideArea])
                 # else if lesion inside variance but outside prostate:
                 elif len(outsideProst) != 0:
-                    print('len outsideProst:', len(outsideProst))
+                    outsideArea = len(outsideProst)
+                    print('len outsideProst:', outsideArea)
                     distfromCapsule = 0
-                    for vox in range(len(outsideProst)):
+                    for vox in range(outsideArea):
                         min_dist = 256
                         if vox % 10 == 0:
                             print('vox', vox)
@@ -205,16 +220,21 @@ class EPEdetector:
                                 min_dist = dist
                         if min_dist > distfromCapsule:
                             distfromCapsule = min_dist
-                    if distfromCapsule > (3*self.variance/4):
-                        EPEscore = 3
-                    elif distfromCapsule > (self.variance/4):
-                        EPEscore = 2
-                    else:
+                    # if distance outside capsule at least 1/4 of variance OR if area > 200, EPEscore = 1
+                    # if both conditions are true, EPE score = 2
+                    if distfromCapsule > (self.variance/4):
+                        if outsideArea > 200:
+                            EPEscore = 2
+                        else:
+                            EPEscore = 1
+                    elif outsideArea > 200:
                         EPEscore = 1
-                    outsideArea = len(outsideProst)
-                    patientEPEdata.append([patient, 'lesion' + str(i+1), EPEscore, distfromCapsule, outsideArea])
+                    else:
+                        EPEscore = 0
+                    lesionEPEdata.append([patient, 'lesion' + str(i+1), EPEscore, distfromCapsule, outsideArea])
                 # else, check how close prostate-confined lesion is to capsule:
                 else:
+                    '''
                     print('len insideProst:', len(insideProst))
                     distfromCapsule = 0
                     for vox in range(len(insideProst)):
@@ -234,15 +254,20 @@ class EPEdetector:
                         EPEscore = 0
                     else:
                         EPEscore = 1
+                    '''
+                    EPEscore = 0
                     outsideArea = 0
-                    patientEPEdata.append([patient, 'lesion' + str(i+1), EPEscore, distfromCapsule, outsideArea])
+                    distfromCapsule = 'organ confined'
+                    lesionEPEdata.append([patient, 'lesion' + str(i+1), EPEscore, distfromCapsule, outsideArea])
+
 
 
             if EPEscore > EPEmax:
                 EPEmax = EPEscore
-        patientEPEdata.append([patient, 'all lesions', EPEmax])
+        lesionEPEdata.append([patient, 'all lesions', EPEmax])
+        patientEPEdata = [patient, EPEmax]
 
-        return patientEPEdata
+        return [lesionEPEdata, patientEPEdata]
 
 
 
