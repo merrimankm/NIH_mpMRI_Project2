@@ -10,7 +10,7 @@ class EPEdetector:
 
         local = 1
         self.threshold = 0.35 #threshold for lesion mask is 0.6344772701607316
-        self.testNum = 'test3'
+        self.testNum = 'test1'
         self.variance = 6 #maximum 3D distance observed as variance: 6.15379664144412
         self.EPEVarThresh = 100
         self.EPE3AreaThresh = 300
@@ -18,21 +18,21 @@ class EPEdetector:
 
 
         if local:
-            self.mask_folder = r'T:\MIP\Katie_Merriman\Project2Data\DilatedProstate_data2'
+            self.mask_folder = r'T:\MIP\Katie_Merriman\Project2Data\DilatedProstate_data3'
             self.dicom_folder = r'T:\MIP\Katie_Merriman\Project2Data\Anonymized_NIfTIs'
-            self.csv_file = r'T:\MIP\Katie_Merriman\Project2Data\dilation_list.csv'
-            self.save_folder = r'T:\MIP\Katie_Merriman\Project2Data\DilatedProstate_data'
-            self.fileName1 = r'T:\MIP\Katie_Merriman\Project2Data\EPEresultsbylesion_remote2.csv'
-            self.fileName2 = r'T:\MIP\Katie_Merriman\Project2Data\EPEresultsbypatient_remote2.csv'
+            self.csv_file = r'T:\MIP\Katie_Merriman\Project2Data\MONAIdilation_list.csv'
+            self.save_folder = r'T:\MIP\Katie_Merriman\Project2Data\MONAIDilatedProstate_data'
+            self.fileName1 = r'T:\MIP\Katie_Merriman\Project2Data\EPEresultsbylesion_MONAI_wDist.csv'
+            self.fileName2 = r'T:\MIP\Katie_Merriman\Project2Data\EPEresultsbypatient_MONAI_wDist.csv'
             self.prostFolder = r'T:\MIP\Katie_Merriman\Project2Data\NVIDIA_output\Anonymized_NIfTIs_WP' \
                                r'\Anonymized_NIfTIs_WP'
         else:
-            self.mask_folder = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/DilatedProstate_data2'
+            self.mask_folder = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/DilatedProstate_data3'
             self.dicom_folder = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/Anonymized_NIfTIs'
-            self.csv_file = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/dilation_list.csv'
-            self.save_folder = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/DilatedProstate_data'
-            self.fileName1 = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/EPEresultsbylesion_remote2.csv'
-            self.fileName2 = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/EPEresultsbypatient_remote2.csv'
+            self.csv_file = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/MONAIdilation_list.csv'
+            self.save_folder = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/MONAIDilatedProstate_data'
+            self.fileName1 = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/EPEresultsbylesion_MONAI_wDist.csv'
+            self.fileName2 = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/EPEresultsbypatient_MONAI_wDist.csv'
             self.prostFolder = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/NVIDIA_output/Anonymized_NIfTIs_WP' \
                                '/Anonymized_NIfTIs_WP'
     def determineEPE(self):
@@ -42,6 +42,16 @@ class EPEdetector:
         #    headers = [['patient', 'lesion', 'EPE grade','distance from capsule', 'area outside of capsule']]
         #    write.writerows(headers)
         #file.close()
+
+        file = open(self.fileName2, 'a+', newline='')
+        # writing the data into the file
+        with file:
+            write = csv.writer(file)
+            write.writerows([["patient", "EPEmax", "altEPEmax", "origOutsideAreaMax", "altOutsideAreaMax",
+                              "TotalAreaMax", "asymmetry", "maxDist", "lesionAreaMax", "lesion_wMaxArea",
+                              "lesionDistMax", "lesion_wMaxArea"]])
+
+        file.close()
 
         EPEdata = []
         YML = [1, 9, 18, 19, 26, 29, 30, 33, 34, 35, 38, 42, 53, 56, 60, 75, 76, 77,
@@ -60,12 +70,12 @@ class EPEdetector:
         #capsuleTest = [8, 9, 10, 1, 2, 3, 4, 5, 6, 7]
 
         for p in noForRemote:
-        #for p in range(1,556):
+        #for p in range(1, 556):
             #skipping YML scored patients:
 
-            if p == 329:
+            #if p == 329:
             #if p in YML:
-                continue
+            #    continue
 
             # patient name should follow format 'SURG-00X'
             patient = 'SURG-'+str(p+1000)[1:]
@@ -114,7 +124,7 @@ class EPEdetector:
                 # writing the data into the file
                 with file:
                     write = csv.writer(file)
-                    write.writerows([["remote error"]])
+                    write.writerows([[patient, "remote error"]])
                 file.close()
         return
 
@@ -225,6 +235,11 @@ class EPEdetector:
         TotalAreaMax = 0
         origOutsideAreaMax = 0
         altOutsideAreaMax = 0
+        maxDist = 0
+        lesionDistMax = 0
+        lesion_wMaxDist = 0
+        lesionAreaMax = 0
+        lesion_wMaxArea = 0
 
         for i in range(num_features):
             val = i + 1
@@ -401,14 +416,23 @@ class EPEdetector:
                                       len(insideProst)+origOutsideArea, asymmetry])
                 if EPEscore > EPEmax:
                     EPEmax = EPEscore
+                    maxDist = distfromCapsule
                 if altEPEscore > altEPEmax:
                         altEPEmax = altEPEscore
                         origOutsideAreaMax = origOutsideArea
                         altOutsideAreaMax = altOutsideArea
                         TotalAreaMax = TotalArea
+                if TotalArea > lesionAreaMax:
+                    lesionAreaMax = TotalArea
+                    lesion_wMaxArea = val
+                if not distfromCapsule == 'organ confined':
+                    if distfromCapsule > lesionDistMax:
+                        lesionDistMax = distfromCapsule
+                        lesion_wMaxDist = val
 
         lesionEPEdata.append([patient, 'all lesions', EPEmax, altEPEmax, origOutsideAreaMax, altOutsideAreaMax])
-        patientEPEdata = [patient, EPEmax, altEPEmax, origOutsideAreaMax, altOutsideAreaMax, TotalAreaMax, asymmetry]
+        patientEPEdata = [patient, EPEmax, altEPEmax, origOutsideAreaMax, altOutsideAreaMax, TotalAreaMax, asymmetry,
+                          maxDist, lesionAreaMax, lesion_wMaxArea, lesionDistMax, lesion_wMaxDist]
 
         return [lesionEPEdata, patientEPEdata]
 
