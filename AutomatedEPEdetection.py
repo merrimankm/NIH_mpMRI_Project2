@@ -10,11 +10,11 @@ class EPEdetector:
 
         local = 1
         self.threshold = 0.35 #threshold for lesion mask is 0.6344772701607316
-        self.testNum = 'test1'
-        self.variance = 6 #maximum 3D distance observed as variance: 6.15379664144412
+        self.testNum = 'test2'
+        self.variance = 6.154 #maximum 3D distance observed as variance: 6.15379664144412
         self.EPEVarThresh = 100
-        self.EPE3AreaThresh = 300
-        self.EPE1_2AreaThresh= 150
+        self.EPE3AreaThresh = 250
+        self.EPE1_2AreaThresh = 150
 
 
         if local:
@@ -22,8 +22,8 @@ class EPEdetector:
             self.dicom_folder = r'T:\MIP\Katie_Merriman\Project2Data\Anonymized_NIfTIs'
             self.csv_file = r'T:\MIP\Katie_Merriman\Project2Data\MONAIdilation_list.csv'
             self.save_folder = r'T:\MIP\Katie_Merriman\Project2Data\MONAIDilatedProstate_data'
-            self.fileName1 = r'T:\MIP\Katie_Merriman\Project2Data\EPEresultsbylesion_MONAI_wDist.csv'
-            self.fileName2 = r'T:\MIP\Katie_Merriman\Project2Data\EPEresultsbypatient_MONAI_wDist.csv'
+            self.fileName1 = r'T:\MIP\Katie_Merriman\Project2Data\EPEresultsbylesion_MONAI_wDist_CapsuleUpdate.csv'
+            self.fileName2 = r'T:\MIP\Katie_Merriman\Project2Data\EPEresultsbypatient_MONAI_wDist_CapsuleUpdate.csv'
             self.prostFolder = r'T:\MIP\Katie_Merriman\Project2Data\NVIDIA_output\Anonymized_NIfTIs_WP' \
                                r'\Anonymized_NIfTIs_WP'
         else:
@@ -31,8 +31,8 @@ class EPEdetector:
             self.dicom_folder = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/Anonymized_NIfTIs'
             self.csv_file = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/MONAIdilation_list.csv'
             self.save_folder = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/MONAIDilatedProstate_data'
-            self.fileName1 = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/EPEresultsbylesion_MONAI_wDist.csv'
-            self.fileName2 = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/EPEresultsbypatient_MONAI_wDist.csv'
+            self.fileName1 = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/EPEresultsbylesion_MONAI_wDist_CapsuleUpdate_remote.csv'
+            self.fileName2 = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/EPEresultsbypatient_MONAI_wDist_CapsuleUpdate_remote.csv'
             self.prostFolder = 'Mdrive_mount/MIP/Katie_Merriman/Project2Data/NVIDIA_output/Anonymized_NIfTIs_WP' \
                                '/Anonymized_NIfTIs_WP'
     def determineEPE(self):
@@ -67,24 +67,28 @@ class EPEdetector:
                        301, 307, 311, 312, 328, 329, 331, 332, 348, 349, 363, 368, 379,
                        385, 394, 413, 420, 465, 472, 481, 485, 508, 512, 516, 550]
 
-        #capsuleTest = [8, 9, 10, 1, 2, 3, 4, 5, 6, 7]
+        capsuleTest = [176, 505, 284]
 
+        #for p in capsuleTest:
         for p in noForRemote:
         #for p in range(1, 556):
             #skipping YML scored patients:
 
             #if p == 329:
-            #if p in YML:
-            #    continue
+            if p in YML:
+                continue
 
             # patient name should follow format 'SURG-00X'
             patient = 'SURG-'+str(p+1000)[1:]
             print(patient)
 
             try:
-                prost = sitk.ReadImage(os.path.join(
-                    self.prostFolder,
-                    patient + '_WP.nii'))
+                prost = sitk.ReadImage(os.path.join(self.mask_folder, patient, 'wp_bt_undilated.nii.gz'))
+
+                #prost = sitk.ReadImage(os.path.join(
+                #    self.prostFolder,
+                #    patient + '_WP.nii'))
+
                 prostArr = sitk.GetArrayFromImage(prost)
                 prostEdge = self.createEdge(patient, prost, prostArr,'_capsule.nii.gz')
                 flippedProst = self.MaskFlip(patient, prost, prostArr)
@@ -132,12 +136,54 @@ class EPEdetector:
 
     def createEdge(self, patient, prost, prostArr, suffix):
         # leaving this as function of EPEdetector to allow easy integration of self.savefolder later
+
         arr_shape = prostArr.shape
         prostNZ = prostArr.nonzero()  # saved as tuple in z,y,x order
         capsule = np.zeros(arr_shape, dtype=int)
 
 
+        '''
+        capsule2 = np.zeros(arr_shape, dtype=int)
 
+        capsuletemp = np.where(prostArr[])
+
+
+        Zmin = min(prostNZ[0])
+        Zmax = max(prostNZ[0])
+        capsule[Zmin] = prostArr[Zmin]
+        capsule[Zmax] = prostArr[Zmax]
+
+        for z in range(Zmin+1,Zmax):
+            prostNZ = prostArr[z].nonzero()
+            Ymin = min(prostNZ[0])
+            Ymax = max(prostNZ[0])
+
+            capsule[z][Ymin] = prostArr[z][Ymin]
+            capsule[z][Ymax] = prostArr[z][Ymax]
+
+            for y in range(Ymin+1, Ymax):
+                prostNZ = prostArr[z][y].nonzero()
+                Xmin = min(prostNZ[0])
+                Xmax = max(prostNZ[0])
+                capsule[z][y][Xmin] = prostArr[z][y][Xmin]
+                capsule[z][y][Xmax] = prostArr[z][y][Xmax]
+                for i in range(len(prostNZ[0])):
+                    if prostArr[z][y-1][prostNZ[0][i]] == 0:
+                        capsule[z][y][prostNZ[0][i]] = 1
+                    elif prostArr[z][y+1][prostNZ[0][i]] == 0:
+                        capsule[z][y][prostNZ[0][i]] = 1
+
+
+
+
+
+
+            ### Repeat addition of points in x direction to catch areas where edge is a line in y direction
+
+
+
+
+        '''
         # find array of x,y,z tuples corresponding to voxels of prostNZ that are on edge of prostate array
         # and also adjacent to lesion voxels outside of prostate
         for prostVoxel in range(len(prostNZ[0])):
@@ -163,6 +209,7 @@ class EPEdetector:
             if (prostNZ[2][prostVoxel] + 1) < arr_shape[2]:
                 if prostArr[prostNZ[0][prostVoxel], prostNZ[1][prostVoxel], prostNZ[2][prostVoxel] + 1] == 0:
                     capsule[prostNZ[0][prostVoxel], prostNZ[1][prostVoxel], prostNZ[2][prostVoxel]] = 1
+
 
         #save edge mask to folder:
 
@@ -282,7 +329,7 @@ class EPEdetector:
                         outsideFlipped.append([lesionNZ[0][ind], lesionNZ[1][ind], lesionNZ[2][ind]])
 
                 if (len(outsideVar) + len(outsideProst)) > len(insideProst):
-                #if (len(outsideVar)+len(outsideProst)) > 1.5*len(insideProst):
+                #if more than half of the lesion is outside of the organ (likely false call):
                     continue
 
                 if len(outsideProst) != 0:
@@ -307,14 +354,14 @@ class EPEdetector:
                     # else if lesion inside variance but outside prostate:
                     else:
                         distfromCapsule = 0
-                        for vox in range(len(outsideProst)):
+                        for vox in range(len(lesionNZ[0])):
                             min_dist = 256
                             if vox % 50 == 0:
                                 print('vox', vox)
                             for prostVox in range(len(edgeNZ[0])):
-                                dist = np.sqrt((spacing[2]*(outsideProst[vox][0] - edgeNZ[0][prostVox]))**2 +
-                                               (spacing[1]*(outsideProst[vox][1] - edgeNZ[1][prostVox])) ** 2 +
-                                               (spacing[0]*(outsideProst[vox][2] - edgeNZ[2][prostVox])) ** 2)
+                                dist = np.sqrt((spacing[2]*(lesionNZ[0][vox] - edgeNZ[0][prostVox]))**2 +
+                                               (spacing[1]*(lesionNZ[1][vox] - edgeNZ[1][prostVox])) ** 2 +
+                                               (spacing[0]*(lesionNZ[2][vox] - edgeNZ[2][prostVox])) ** 2)
                                 if dist < min_dist:
                                     min_dist = dist
                             if min_dist > distfromCapsule:
@@ -328,13 +375,13 @@ class EPEdetector:
                     # if both conditions are true, EPE score = 2
                     if len(outsideVar) > self.EPEVarThresh:
                         EPEscore = 3
-                    elif (len(outsideVar) < self.EPEVarThresh) & (len(outsideVar)!=0):
+                    elif (len(outsideVar) < self.EPEVarThresh) & (len(outsideVar) != 0):
                         EPEscore = 2
                     elif outsideArea > self.EPE3AreaThresh:
                         EPEscore = 3
                     elif distfromCapsule > self.variance:
                         EPEscore = 3
-                    elif distfromCapsule > (self.variance/4):
+                    elif distfromCapsule > (self.variance / 4):
                         if outsideArea > self.EPE1_2AreaThresh:
                             EPEscore = 2
                         else:
@@ -343,6 +390,7 @@ class EPEdetector:
                         EPEscore = 1
                     else:
                         EPEscore = 0
+
 
                 # else, check how close prostate-confined lesion is to capsule:
                 else:
