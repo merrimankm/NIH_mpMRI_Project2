@@ -8,7 +8,7 @@ from scipy.ndimage import label
 class EPEdetector:
     def __init__(self):
 
-        local = 1
+        local = 0
         self.threshold1 = 0.35  # threshold for lesion mask is 0.6344772701607316 , previously tried .35
         self.threshold2 = 0.45
         self.threshold3 = 0.55
@@ -283,6 +283,9 @@ class EPEdetector:
                 outsideVar = []
                 outsideProst = []
                 insideProst = []
+                prostCoordsTemp = []
+                prostCoordsTemp_xy = []
+                prostCoordsTemp_z = []
                 prostCoords = []
                 prostCoords_xy = []
                 prostCoords_z = []
