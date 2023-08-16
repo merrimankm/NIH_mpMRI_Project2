@@ -8,7 +8,7 @@ from scipy.ndimage import label
 class EPEdetector:
     def __init__(self):
 
-        local = 1
+        local = 0
         self.threshold1 = 0.35  # threshold for lesion mask is 0.6344772701607316 , previously tried .35
         self.threshold2 = 0.45
         self.threshold3 = 0.55
@@ -81,15 +81,15 @@ class EPEdetector:
                 varZoneImg = sitk.ReadImage(os.path.join(self.mask_folder, patient, "wp_bt_fullVarZone.nii.gz"))
                 varZoneArr = sitk.GetArrayFromImage(varZoneImg)
 
-                flippedProstEdgeImg = sitk.ReadImage(os.path.join(self.mask_folder, patient, "wp_prostEdge.nii.gz"))
+                flippedProstEdgeImg = sitk.ReadImage(os.path.join(self.mask_folder, patient, "wp_prostEdge-Flipped.nii.gz"))
                 flippedProstEdgeArr = sitk.GetArrayFromImage(flippedProstEdgeImg)
-                flippedVarImg = sitk.ReadImage(os.path.join(self.mask_folder, patient, "wp_fullVar.nii.gz"))
+                flippedVarImg = sitk.ReadImage(os.path.join(self.mask_folder, patient, "wp_fullVar-Flipped.nii.gz"))
                 flippedVarArr = sitk.GetArrayFromImage(flippedVarImg)
-                flippedVarEdgeImg = sitk.ReadImage(os.path.join(self.mask_folder, patient, "wp_outsideVarEdge.nii.gz"))
+                flippedVarEdgeImg = sitk.ReadImage(os.path.join(self.mask_folder, patient, "wp_outsideVarEdge-Flipped.nii.gz"))
                 flippedVarEdgeArr = sitk.GetArrayFromImage(flippedVarEdgeImg)
-                flippedInsideImg = sitk.ReadImage(os.path.join(self.mask_folder, patient, "wp_bt_inside.nii.gz"))
+                flippedInsideImg = sitk.ReadImage(os.path.join(self.mask_folder, patient, "wp_bt_inside-Flipped.nii.gz"))
                 flippedInsideArr = sitk.GetArrayFromImage(flippedInsideImg)
-                flippedInsideEdgeImg = sitk.ReadImage(os.path.join(self.mask_folder, patient, "wp_insideVarEdge.nii.gz"))
+                flippedInsideEdgeImg = sitk.ReadImage(os.path.join(self.mask_folder, patient, "wp_insideVarEdge-Flipped.nii.gz"))
                 flippedInsideEdgeArr = sitk.GetArrayFromImage(flippedInsideEdgeImg)
                 flippedVarZoneImg = sitk.ReadImage(os.path.join(self.mask_folder, patient,
                                                                 "wp_bt_fullVarZone-Flipped.nii.gz"))
@@ -108,19 +108,19 @@ class EPEdetector:
                 self.lesionData(patient, prostArr, prostEdgeArr, varArr, varEdgeArr,
                                 insideArr, insideEdgeArr, lesionArr, varZoneArr, "1", "orig")
                 self.lesionData(patient, flippedProstArr, flippedProstEdgeArr, flippedVarArr, flippedVarEdgeArr,
-                                flippedInsideArr, flippedInsideEdgeArr, lesionArr, flippedVarZoneArr, "1", "orig")
+                                flippedInsideArr, flippedInsideEdgeArr, lesionArr, flippedVarZoneArr, "1", "flipped")
                 self.lesionData(patient, prostArr, prostEdgeArr, varArr, varEdgeArr,
                                 insideArr, insideEdgeArr, lesionArr, varZoneArr, "2", "orig")
                 self.lesionData(patient, flippedProstArr, flippedProstEdgeArr, flippedVarArr, flippedVarEdgeArr,
-                                flippedInsideArr, flippedInsideEdgeArr, lesionArr, flippedVarZoneArr, "2", "orig")
+                                flippedInsideArr, flippedInsideEdgeArr, lesionArr, flippedVarZoneArr, "2", "flipped")
                 self.lesionData(patient, prostArr, prostEdgeArr, varArr, varEdgeArr,
                                 insideArr, insideEdgeArr, lesionArr, varZoneArr, "3", "orig")
                 self.lesionData(patient, flippedProstArr, flippedProstEdgeArr, flippedVarArr, flippedVarEdgeArr,
-                                flippedInsideArr, flippedInsideEdgeArr, lesionArr, flippedVarZoneArr, "3", "orig")
+                                flippedInsideArr, flippedInsideEdgeArr, lesionArr, flippedVarZoneArr, "3", "flipped")
                 self.lesionData(patient, prostArr, prostEdgeArr, varArr, varEdgeArr,
                                 insideArr, insideEdgeArr, lesionArr, varZoneArr, "4", "orig")
                 self.lesionData(patient, flippedProstArr, flippedProstEdgeArr, flippedVarArr, flippedVarEdgeArr,
-                                flippedInsideArr, flippedInsideEdgeArr, lesionArr, flippedVarZoneArr, "4", "orig")
+                                flippedInsideArr, flippedInsideEdgeArr, lesionArr, flippedVarZoneArr, "4", "flipped")
 
             except RuntimeError:
                 print("remote error")
